@@ -5,7 +5,19 @@ description = "Default template for PDM package"
 authors = [
     {name = "Alex Berkhout", email = "berkhoutalex@gmail.com"},
 ]
-dependencies = []
+dependencies = [
+    "openai>=1.14.3",
+    "anthropic>=0.21.3",
+    "toml>=0.10.2",
+    "ipython>=8.22.2",
+    "matplotlib>=3.8.3",
+    "pandas>=2.2.1",
+    "numpy>=1.26.4",
+    "plotly>=5.20.0",
+    "pandas-datareader>=0.10.0",
+    "requests>=2.31.0",
+    "yfinance>=0.2.37",
+]
 requires-python = "==3.10.*"
 readme = "README.md"
 license = {text = "MIT"}
