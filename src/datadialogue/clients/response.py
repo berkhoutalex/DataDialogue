@@ -18,4 +18,5 @@ class CodeResponse():
     return self.raw_response
   
   def execute(self):
+    print(self.extras)
     exec(self.code)

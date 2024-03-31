@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from src.datadialogue.datasources.source import Source
 from src.datadialogue.clients.response import CodeResponse
 class Client(ABC):
   
@@ -16,20 +17,17 @@ class Client(ABC):
         {
           "role": "system", 
           "content": "Available packages include numpy, pandas, matplotlib and plotly. Make sure to include the necessary imports and that the code is fully executable. Additionally, provide as much information on the math you did to get the results as possible.",
-        },
-        {
-          "role": "system",
-          "content": "If you need to use a specific function, please import it from specifically *src.datadialogue.sample_data.timeseries* and call it using the following syntax: `aapl_data(start_date='2020-01-01', end_date='2021-01-01')`. The available functions are: aapl_data, msft_data, goog_data, fb_data, amzn_data, tsla_data, btc_data, eth_data, doge_data, and spy_data. These are pandas dataframes with has a Date Index and Columns: High, Low, Open, Close, Volume, Adj Close."
         }
       ]
     return messages
   
   @abstractmethod
-  def raw_prompt(self, prompt):
+  def raw_prompt(self, prompt, data_source: Source):
     pass
   
-  def prompt(self, prompt):
-    response = self.raw_prompt(prompt)
+  def prompt(self, prompt, data_source: Source):
+    
+    response = self.raw_prompt(prompt, data_source)
     return CodeResponse(response)
   
   
