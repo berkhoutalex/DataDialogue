@@ -16,18 +16,18 @@ class Client(ABC):
         },
         {
           "role": "system", 
-          "content": "Available packages include numpy, pandas, matplotlib and plotly. Make sure to include the necessary imports and that the code is fully executable. Additionally, provide as much information on the math you did to get the results as possible.",
+          "content": "Available packages include numpy, pandas and plotly. Make sure to include the necessary imports and that the code is fully executable. Additionally, provide as much information on the math you did to get the results as possible. When rendering a plot, save it to an html file in the current directory.",
         }
       ]
     return messages
   
   @abstractmethod
-  def raw_prompt(self, prompt, data_source: Source):
+  def raw_get_response(self, prompt, history = ""):
     pass
   
-  def prompt(self, prompt, data_source: Source):
+  def get_response(self, prompt, history = ""):
     
-    response = self.raw_prompt(prompt, data_source)
-    return CodeResponse(response)
+    response = self.raw_get_response(prompt, history)
+    return CodeResponse(prompt, response)
   
   

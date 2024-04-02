@@ -1,10 +1,14 @@
 import re
 
 class CodeResponse():
-  def __init__(self, raw_response:str):
+
+  def __init__(self, prompt: str, raw_response:str):
     self.raw_response = raw_response
     self.code = self.extract_code()
+    self.prompt = prompt
     self.extras = self.extract_extras()
+    
+
     
   def extract_code(self):
     code = re.search(r"```python(.*?)```", self.raw_response, re.DOTALL)
@@ -18,5 +22,4 @@ class CodeResponse():
     return self.raw_response
   
   def execute(self):
-    print(self.extras)
     exec(self.code)
