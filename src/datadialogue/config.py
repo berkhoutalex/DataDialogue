@@ -13,5 +13,8 @@ class Config:
   
   def get_claude_key(self):
     return environ.get("ANTHROPIC_API_KEY", self.config["API_KEYS"]["CLAUDE"])
+  
+  def get_ollama_api_endpoint(self):
+    return self.config["API_KEYS"]["OLLAMA"]
 
   

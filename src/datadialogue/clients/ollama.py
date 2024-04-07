@@ -1,18 +1,19 @@
-from openai import OpenAI as OA
+import ollama
+
 from src.datadialogue.clients.client import Client
 from src.datadialogue.config import Config
 
 
-class OpenAI(Client):
+class Ollama(Client):
     def __init__(self, model, data_source):
         config = Config()
         self.data_source = data_source
-        api_key = config.get_openai_key()
-        self.client = OA(api_key=api_key)
+        self.client = ollama.Client(config.get_ollama_api_endpoint())
         self.model = model
 
     def raw_get_response(self, prompt, history):
-        response = self.client.chat.completions.create(
+        print(self.code_instructions() + self.data_source.data_to_prompt())
+        response = self.client.chat(
             messages=self.code_instructions()
             + self.data_source.data_to_prompt()
             + [
@@ -22,4 +23,4 @@ class OpenAI(Client):
             model=self.model,
         )
 
-        return response.choices[0].message.content
+        return response["message"]["content"]
