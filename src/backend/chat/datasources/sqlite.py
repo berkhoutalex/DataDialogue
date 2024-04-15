@@ -3,7 +3,7 @@ import sqlite3
 from chat.datasources.source import Source
 
 
-class SqlLiteDataSource(Source):
+class SqliteDataSource(Source):
     def __init__(self, db_path: str):
         self.db_path = db_path
         self.connect()

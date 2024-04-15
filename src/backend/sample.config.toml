@@ -1,8 +1,12 @@
 [MODEL]
-provider = "Ollama"
+provider = "Ollama" # "OpenAI" or "Ollama" or "Anthropic"
 model = "wizardcoder:7b-python"
 
 [API_KEYS]
 CLAUDE = "<YOUR_CLAUDE_API_KEY>"
 OPENAI = "<YOUR_OPEN_AI_API_KEY"
 OLLAMA = "<YOUR_OLLAMA_ENDPOINT>"
+
+[DATA_SOURCE]
+source_type = "csvs" # "csvs" or "sqlite"
+source_path = "data"

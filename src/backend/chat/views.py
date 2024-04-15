@@ -14,6 +14,9 @@ def settings(request):
         config = Config()
         config.set_model_name(request.data.get("model"))
         config.set_model_provider(request.data.get("provider"))
+        config.set_data_source(
+            request.data.get("dataSource"), request.data.get("dataSourcePath")
+        )
         if request.data.get("provider").lower() == "openai":
             config.set_openai_key(request.data.get("apiKey"))
         elif request.data.get("provider").lower() == "claude":

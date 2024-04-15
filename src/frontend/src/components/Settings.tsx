@@ -1,9 +1,5 @@
 import * as React from 'react';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import FormControl from '@mui/material/FormControl';
-import FormLabel from '@mui/material/FormLabel';
 import Box from '@mui/material/Box';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -17,6 +13,8 @@ interface SettingsResponse {
   provider: ModelProvider;
   model: string;
   apiKey: string;
+  dataSource: string;
+  dataSourcePath: string;
 
 }
 
@@ -35,26 +33,30 @@ function requestSettings(setResponse : (response : SettingsResponse) => void) {
     const settings = {
       provider: response.data.provider,
       model: response.data.model,
-      apiKey: response.data.key
+      apiKey: response.data.key,
+      dataSource: response.data.dataSource,
+      dataSourcePath: response.data.dataSourcePath
     }
     setResponse(settings);
   }
   )
 }
 
-
-
 const Settings = () => {
 
   const [modelProvider, selectModelProvider] = React.useState<ModelProvider>("OpenAI");
   const [model, setModel] = React.useState<string>("gpt-3.5-turbo");
   const [apiKey, setApiKey] = React.useState<string>("");
+  const [dataSource, setDataSource] = React.useState<string>("csvs");
+  const [dataSourcePath, setDataSourcePath] = React.useState<string>("");
 
   function saveSettings() {
     axios.patch('http://localhost:8000/settings/', {
       provider: modelProvider,
       model: model,
-      apiKey: apiKey
+      apiKey: apiKey,
+      dataSource: dataSource,
+      dataSourcePath: dataSourcePath
     }).then((response) => {
       console.log(response);
     })
@@ -65,6 +67,8 @@ const Settings = () => {
       selectModelProvider(response.provider);
       setModel(response.model);
       setApiKey(response.apiKey);
+      setDataSource(response.dataSource);
+      setDataSourcePath(response.dataSourcePath);
     });
   }, []);
 
@@ -74,7 +78,7 @@ const Settings = () => {
     })
   }
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event: SelectChangeEvent) => {
     if (event.target.value === "OpenAI") {
       selectModelProvider("OpenAI");
       setModel("gpt-3.5-turbo")
@@ -91,21 +95,24 @@ const Settings = () => {
     }
   };
 
-  const ControlledRadioButtonsGroup = () => {
+  const ProviderSelect = () => {
     return (
-      <FormControl component="fieldset">
-        <FormLabel component="legend">Model</FormLabel>
-        <RadioGroup
-          aria-label="model"
-          name="model"
+      <Box sx={{ minWidth: 120, margin: "1rem" }}>
+      <FormControl fullWidth>
+        <InputLabel id="demo-simple-select-label">Model Provider</InputLabel>
+        <Select
+          labelId="demo-simple-select-label"
+          id="demo-simple-select"
           value={modelProvider}
+          label="Model"
           onChange={handleChange}
         >
-          <FormControlLabel value="OpenAI" control={<Radio />} label="OpenAI" />
-          <FormControlLabel value="Anthropic" control={<Radio />} label="Anthropic" />
-          <FormControlLabel value="Ollama" control={<Radio />} label="Ollama" />
-        </RadioGroup>
+          <MenuItem value="OpenAI">OpenAI</MenuItem>
+          <MenuItem value="Anthropic">Anthropic</MenuItem>
+          <MenuItem value="Ollama">Ollama</MenuItem>
+        </Select>
       </FormControl>
+    </Box>
     );
   }
 
@@ -115,7 +122,7 @@ const Settings = () => {
 
   const ModelSelect = () => {
     return (
-      <Box sx={{ minWidth: 120 }}>
+      <Box sx={{ minWidth: 120, margin: "1rem" }}>
         <FormControl fullWidth>
           <InputLabel id="demo-simple-select-label">Model</InputLabel>
           <Select
@@ -133,29 +140,37 @@ const Settings = () => {
       </Box>
     );
   }
-  
-  const ApiKeyForm = () => {
+  function handleDataSourceChange(event: SelectChangeEvent) {
+    setDataSource(event.target.value);
+  }
+
+  const DataSourceSelect = () => {
     return (
-      <Box sx={{ minWidth: 120 }}>
-        <FormControl fullWidth>
-        <TextField
-          id="outlined-basic"
-          variant="outlined"
-          sx={{ width: "100%", backgroundColor: "#FFFFFF" }}
-          placeholder="Enter your api key"
-          value={apiKey}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-            setApiKey(event.target.value);
-          }}
-        />
-        </FormControl>
-      </Box>
+      <Box sx={{ minWidth: 120, margin: "1rem" }}>
+      <FormControl fullWidth>
+        <InputLabel id="demo-simple-select-label">Data Source</InputLabel>
+        <Select
+          labelId="demo-simple-select-label"
+          id="demo-simple-select"
+          value={dataSource}
+          label="DataSource"
+          onChange={handleDataSourceChange}
+        >
+          <MenuItem value="csvs">CSVs</MenuItem>
+          <MenuItem value="sqlite">SQLite</MenuItem>
+        </Select>
+      </FormControl>
+    </Box>
     );
+  }
+
+  function handleDataSourcePathChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setDataSourcePath(event.target.value);
   }
 
   const SaveButton = () => {
     return (
-      <Box sx={{ minWidth: 120 }}>
+      <Box sx={{ minWidth: 120, margin: "1rem" }}>
         <FormControl fullWidth>
           <Button variant="contained" color="primary" onClick={saveSettings}>
             Save
@@ -170,9 +185,43 @@ const Settings = () => {
   return (
     <div style={{display:"flex", flexDirection:"column"}}>
       <h1>Settings</h1>
-      <ControlledRadioButtonsGroup />
-      <ModelSelect />
-      <ApiKeyForm />
+      <div style = {{display:"flex", flexDirection:"row", justifyContent:"flex-start"}}>
+        <ProviderSelect />
+        <ModelSelect />
+        <Box sx={{ minWidth: 120, margin: "1rem" }}>
+          <FormControl fullWidth>
+          <TextField
+            id="outlined-basic"
+            variant="outlined"
+            sx={{ width: "100%", backgroundColor: "#FFFFFF" }}
+            placeholder="Enter your api key"
+            value={apiKey}
+            label="API Key"
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              setApiKey(event.target.value);
+            }}
+          />
+          </FormControl>
+        </Box>
+      </div>
+
+      <div style = {{display:"flex", flexDirection:"row", justifyContent:"flex-start"}}>
+        <DataSourceSelect />
+        <Box sx={{ minWidth: 120, margin: "1rem" }}>
+          <FormControl fullWidth>
+          <TextField
+            id="outlined-basic"
+            variant="outlined"
+            sx={{ width: "100%", backgroundColor: "#FFFFFF" }}
+            placeholder="Enter the path to your data source"
+            value={dataSourcePath}
+            label="Data Source Path"
+            onChange={handleDataSourcePathChange}
+          />
+          </FormControl>
+        </Box>
+      </div>
+      
       <SaveButton />
 
     </div>

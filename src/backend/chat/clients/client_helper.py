@@ -1,11 +1,9 @@
-from chat.config import Config
 from chat.clients.openai import OpenAI
 from chat.clients.claude import Claude
 from chat.clients.ollama import Ollama
 
 
-def client_from_config(data_source):
-    config = Config()
+def client_from_config(config, data_source):
     model = config.get_model_name()
     provider = config.get_model_provider()
     if provider.lower() == "openai":

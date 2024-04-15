@@ -1,6 +1,9 @@
 import toml
 from os import environ
 
+from chat.datasources.csv import CSVDataSource
+from chat.datasources.sqlite import SqliteDataSource
+
 
 class Config:
     def __init__(self):
@@ -54,6 +57,8 @@ class Config:
             "model": self.get_model_name(),
             "provider": self.get_model_provider(),
             "key": key,
+            "dataSource": self.config["DATA_SOURCE"]["source_type"],
+            "dataSourcePath": self.config["DATA_SOURCE"]["source_path"],
         }
 
     def get_model_key(self, model):
@@ -64,3 +69,14 @@ class Config:
         elif model.lower() == "ollama":
             return self.get_ollama_api_endpoint()
         return None
+
+    def get_data_source(self):
+        source_type = self.config["DATA_SOURCE"]["source_type"]
+        if source_type == "csv":
+            return CSVDataSource(self.config["DATA_SOURCE"]["source_path"])
+        elif source_type == "sqlite":
+            return SqliteDataSource(self.config["DATA_SOURCE"]["source_path"])
+
+    def set_data_source(self, source_type, source_path):
+        self.set("DATA_SOURCE", "source_type", source_type)
+        self.set("DATA_SOURCE", "source_path", source_path)

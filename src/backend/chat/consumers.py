@@ -4,8 +4,8 @@ import re
 import sys
 
 from channels.generic.websocket import WebsocketConsumer
+from chat.config import Config
 from chat.clients.client_helper import client_from_config
-from chat.datasources.csv import CSVDataSource
 from chat.prompting.conversation import Conversation
 import codecs
 
@@ -13,7 +13,9 @@ import codecs
 class ChatConsumer(WebsocketConsumer):
     def connect(self):
         self.accept()
-        self.client = client_from_config(CSVDataSource("C:\Repos\DataDialogue\data"))
+        config = Config()
+        data_source = config.get_data_source()
+        self.client = client_from_config(config, data_source)
         self.conversation = Conversation(self.client)
 
     def disconnect(self, close_code):
