@@ -1,92 +1,53 @@
-import functools
-import operator
-from typing import Annotated, List, TypedDict
-
-from langchain_core.messages import BaseMessage, HumanMessage
-from langgraph.graph import END, StateGraph
+from agentic_workflow.agents.helper import create_agent
+from chat.datasources.source import Source
 
 
-from agentic_workflow.agents.helper import agent_node, create_agent
-from agentic_workflow.agents.director import create_director
-
-
-class CoderTeamState(TypedDict):
-    messages: Annotated[List[BaseMessage], operator.add]
-    team_members: List[str]
-    next: str
-    code: str
-    sender = "Coder"
-
-
-def coder_agent(llm):
+def coder_agent(llm, data_source: Source):
     return create_agent(
         llm,
         [],
-        """
+        f"""
             You are an expert python software developer who specializes in data analysis and visualization. 
-            Available packages include numpy, sqlite, pandas and plotly. Make sure to include the necessary imports and that the code is fully executable.
-            Include only one code block surrounded only with ``` ```.  
-            When rendering a plot, save it to an html file in the current directory. 
-            Return the completed code and the path to the saved plot.
+            Make sure to include the necessary imports and that the code is fully executable.
+            Print out the output if you wish to provide it to the user.
+            Include only one code block surrounded only with ```python ```.  
+            When rendering a plot, save it to an html file in the current directory. Do not render the plot, just save it to an html file.
+            Return the completed code.
+            
+            Data Source: {data_source.data_to_prompt()}
         """,
     )
 
 
-def coder_node(llm):
-    return functools.partial(agent_node, agent=coder_agent(llm), name="Coder")
+def reviewer_agent(llm, data_source: Source):
+    return create_agent(
+        llm,
+        [],
+        f"""
+            You are a software developer who specializes in reviewing code for syntax and logical errors. 
+            You will look at the code provided in the last message and modify it if you believe there is something wrong.
+            You do not need to run the code, just examine it for errors and make the necessary corrections.
+            When rendering a plot, save it to an html file in the current directory. Do not render the plot, just save it to an html file.
+            Include only one code block surrounded only with ```python ```.  
+            
+            Data Source: {data_source.data_to_prompt()}
+        """,
+    )
 
 
-def reviewer_agent(llm):
+def dependency_agent(llm):
     return create_agent(
         llm,
         [],
         """
-            You are a software developer who specializes in reviewing code for syntax and logical errors. 
-            You will look at the code provided and modify it if you identity any problems.
+            You are a software developer who specializes in managing dependencies. 
+            Given the block of code from either the coder or the reviewer, you must return all the dependencies required to execute it as a space-separated list.
+            Only return the list of dependency names, do not include version numbers, the import phrase, pip commands or any other information.
+            The dependencies should be formatted such that they can be used in a pip install command.
+            You do not need to actually run the code or install the dependencies, just examine it for dependencies and supply the pip install command.
+            Surround your dependencies with ~~~deps ~~~ .
+            Also return the code block surrounded by ```python ```
+            Do not access any tools, they are not necessary.
+            DO NOT reply with anything other than the dependencies and the code block.
         """,
     )
-
-
-def reviewer_node(llm):
-    return functools.partial(agent_node, agent=reviewer_agent(llm), name="Reviewer")
-
-
-def director_agent(llm):
-    return create_director(
-        llm,
-        """
-            You are a supervisor tasked with managing a conversation between the following workers: Coder, Reviewer. 
-            Given the following user request, respond with the worker to act next. 
-            Each worker will perform a task and respond with their results and status. 
-            You are only finished once code is written. Return immediately once there is completed code.
-            When finished, respond with FINISH.
-        """,
-        ["Coder", "Reviewer"],
-    )
-
-
-def enter_coder_chain(message: str):
-    results = {
-        "messages": [HumanMessage(content=message)],
-    }
-    return results
-
-
-def coder_graph(llm):
-    coder_graph = StateGraph(CoderTeamState)
-    coder_graph.add_node("Coder", coder_node(llm))
-    coder_graph.add_node("Reviewer", reviewer_node(llm))
-    coder_graph.add_node("Director", director_agent(llm))
-
-    coder_graph.add_edge("Coder", "Director")
-    coder_graph.add_edge("Reviewer", "Director")
-    coder_graph.add_conditional_edges(
-        "Director",
-        lambda x: x["next"],
-        {"Coder": "Coder", "Reviewer": "Reviewer", "FINISH": END},
-    )
-
-    coder_graph.set_entry_point("Director")
-    chain = coder_graph.compile()
-
-    return enter_coder_chain | chain

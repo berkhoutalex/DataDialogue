@@ -38,12 +38,10 @@ class SqliteDataSource(Source):
         )
 
     def data_to_prompt(self):
-        return [
-            {
-                "role": "system",
-                "content": "You have access to a sqllite database located at "
-                + self.db_path
-                + " with the following schema - "
-                + ", ".join([self.table_to_string(table[0]) for table in self.schema]),
-            }
-        ]
+        prompt = (
+            "You have access to a sqlite database located at "
+            + self.db_path
+            + " with the following schema - "
+            + ", ".join([self.table_to_string(table[0]) for table in self.schema])
+        )
+        return prompt

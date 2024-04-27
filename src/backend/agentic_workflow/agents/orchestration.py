@@ -1,90 +1,71 @@
-import logging
-import operator
-from typing import Annotated, Sequence, TypedDict
-from langchain_core.messages import BaseMessage, HumanMessage
-from typing import TypedDict  # noqa: F811
+from agentic_workflow.agents.planner import Plan, Step, planner_agent
+from agentic_workflow.agents.researcher_team import (
+    data_explorer_agent,
+    research_agent,
+    search_agent,
+)
 
-from langgraph.graph import END, StateGraph
+from langchain.agents import (
+    AgentExecutor,
+)
 
-
-from agentic_workflow.agents.coder_team import coder_graph
-from agentic_workflow.agents.director import create_director
-from agentic_workflow.agents.researcher_team import research_graph
-
-
-def director_node(llm):
-    return create_director(
-        llm,
-        """
-            You are a supervisor tasked with managing a conversation between the following teams: {team_members}.
-            Your goal is produce code that will complete the users request, including commentary and plots if necessary.
-            Given the following user request, respond with the worker to act next. Each worker will perform a task and respond with their results and status. 
-            You are only finished if you have successfully written code that completes the user request. Do not finish with just directions.
-            Finish immediately once you have received the completed code.
-            When finished, respond with FINISH.
-            
-        """,
-        ["Research team", "Coder team"],
-    )
+from agentic_workflow.agents.coder_team import (
+    coder_agent,
+    dependency_agent,
+    reviewer_agent,
+)
 
 
-class AgentState(TypedDict):
-    messages: Annotated[Sequence[BaseMessage], operator.add]
-    next: str
-    sender: str
+class Team:
+    def __init__(self, objective, plan, workers):
+        self.plan = plan
+        self.workers = workers
+        self.history = []
+        self.objective = objective
+
+    def format_history_and_step_in_prompt(self, step: Step):
+        return {
+            "step": [step.description],
+            "team-objective": [self.objective],
+            "history": self.history,
+        }
+
+    def run_step(self, step: Step):
+        worker: AgentExecutor = self.workers[step.worker]
+        prompt = self.format_history_and_step_in_prompt(step)
+        response = worker.invoke(prompt)["output"]
+        print(f"Response: {response}")
+        print("\n\n")
+        self.history.append(step.worker + ":" + response)
+
+    def run(self):
+        for step in self.plan.steps:
+            print(f"Running step: {step.description}")
+            print("\n\n")
+            self.run_step(step)
+        return self.history[-1]
 
 
-def get_all_messages(state):
-    messages = ""
-    for message in state["messages"]:
-        messages += message.content + "\n"
-    return messages
+def run_team(llm, config, prompt, data_source):
+    planner = planner_agent(llm)
 
+    seacher = search_agent(llm, config)
+    researcher = research_agent(llm)
+    coder = coder_agent(llm, data_source)
+    reviewer = reviewer_agent(llm, data_source)
+    explorer = data_explorer_agent(llm, data_source)
+    dependency = dependency_agent(llm)
+    agent_map = {
+        "search": seacher,
+        "researcher": researcher,
+        "coder": coder,
+        "reviewer": reviewer,
+        "explorer": explorer,
+        "dependencybot": dependency,
+    }
 
-def join_graph(response: dict):
-    return {"messages": response["messages"]}
+    plan: Plan = planner.invoke(prompt)
+    print(plan)
+    team = Team(prompt, plan, agent_map)
 
-
-def orchestration_graph(llm, config):
-    super_graph = StateGraph(AgentState)
-
-    researchers = research_graph(llm, config)
-    coders = coder_graph(llm)
-    director = director_node(llm)
-
-    super_graph.add_node("Research team", get_all_messages | researchers | join_graph)
-    super_graph.add_node("Coder team", get_all_messages | coders | join_graph)
-
-    super_graph.add_node("Director", director)
-
-    super_graph.add_edge("Research team", "Director")
-    super_graph.add_edge("Coder team", "Director")
-
-    super_graph.add_conditional_edges(
-        "Director",
-        lambda x: x["next"],
-        {
-            "Coder team": "Coder team",
-            "Research team": "Research team",
-            "FINISH": END,
-        },
-    )
-    super_graph.set_entry_point("Director")
-    super_graph = super_graph.compile()
-    return super_graph
-
-
-def run_team(llm, config, prompt):
-    full_graph = orchestration_graph(llm, config)
-    all_messages = []
-    for s in full_graph.stream(
-        {
-            "messages": [HumanMessage(content=prompt)],
-        },
-        {"recursion_limit": 150},
-    ):
-        if "__end__" not in s:
-            logging.info(s)
-            all_messages.append(s)
-    print(all_messages[-2])
-    return all_messages[-1]["messages"][-1].content
+    return team.run()

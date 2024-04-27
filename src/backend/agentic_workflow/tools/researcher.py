@@ -4,7 +4,6 @@ from typing import List
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.tools import tool
-
 from chat.config import Config
 
 

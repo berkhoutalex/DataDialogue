@@ -1,12 +1,17 @@
-from io import StringIO
 import json
 import re
-import sys
 
 from channels.generic.websocket import WebsocketConsumer
 from agentic_workflow.agents.orchestration import run_team
 from chat.config import Config
-from agentic_workflow.helpers import CodeResponse, client_from_config
+from agentic_workflow.helpers import (
+    CodeResponse,
+    client_from_config,
+    install_dependencies,
+    run_code,
+    review_code,
+    run_code_response,
+)
 import codecs
 
 
@@ -36,12 +41,22 @@ class ChatConsumer(WebsocketConsumer):
         else:
             return None
 
-    def execute_code(self, code):
-        old_stdout = sys.stdout
-        redirected_output = sys.stdout = StringIO()
-        exec(code)
-        sys.stdout = old_stdout
-        return redirected_output.getvalue()
+    def execute_code(self, code: str):
+        output = run_code(code, CodeResponse.venv)
+        return output
+
+    def execute_code_response(self, code_response: CodeResponse):
+        install_dependencies(code_response)
+        success, output = run_code_response(code_response)
+        if success:
+            return output
+        else:
+            new_code_response = review_code(
+                code_response, output, self.client, self.data_source
+            )
+            install_dependencies(new_code_response)
+            success, output = run_code_response(new_code_response)
+            return output
 
     def handleCode(self, text_data_json):
         code = text_data_json["code"]
@@ -57,10 +72,9 @@ class ChatConsumer(WebsocketConsumer):
     def handleMessage(self, text_data_json):
         message = text_data_json["message"]
 
-        response = run_team(self.client, self.config, message)[-1]
-        print(response)
+        response = run_team(self.client, self.config, message, self.data_source)
         response = CodeResponse(message, response)
-        code_output = self.execute_code(response.code)
+        code_output = self.execute_code_response(response)
         html = self.extract_html(response.code)
         if html:
             self.send(
