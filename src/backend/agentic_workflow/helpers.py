@@ -1,5 +1,9 @@
 import re
 
+from langchain_openai.chat_models import ChatOpenAI
+from langchain_anthropic.chat_models import ChatAnthropic
+from langchain_community.llms import Ollama
+
 
 class CodeResponse:
     def __init__(self, prompt: str, raw_response: str):
@@ -29,3 +33,19 @@ class CodeResponse:
 
     def execute(self):
         exec(self.code)
+
+
+def client_from_config(config):
+    model = config.get_model_name()
+    provider = config.get_model_provider()
+    if provider.lower() == "openai":
+        key = config.get_openai_key()
+        return ChatOpenAI(
+            model=model,
+            api_key=key,
+        )
+    elif provider.lower() == "claude":
+        key = config.get_claude_key()
+        return ChatAnthropic(model=model, api_key=key)
+    elif provider.lower() == "ollama":
+        return Ollama(model=model)

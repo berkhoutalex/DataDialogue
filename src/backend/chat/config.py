@@ -21,6 +21,9 @@ class Config:
     def get_ollama_api_endpoint(self):
         return self.config["API_KEYS"]["OLLAMA"]
 
+    def get_tavily_api_key(self):
+        return self.config["API_KEYS"]["TAVILY"]
+
     def get_model_name(self):
         return self.config["MODEL"]["model"]
 
@@ -39,6 +42,9 @@ class Config:
 
     def set_ollama_api_endpoint(self, value):
         self.set("API_KEYS", "OLLAMA", value)
+
+    def set_tavily_api_key(self, value):
+        self.set("API_KEYS", "TAVILY", value)
 
     def set_model_name(self, value):
         self.set("MODEL", "model", value)

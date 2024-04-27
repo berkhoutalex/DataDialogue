@@ -4,9 +4,9 @@ import re
 import sys
 
 from channels.generic.websocket import WebsocketConsumer
+from agentic_workflow.agents.orchestration import run_team
 from chat.config import Config
-from chat.clients.client_helper import client_from_config
-from chat.prompting.conversation import Conversation
+from agentic_workflow.helpers import CodeResponse, client_from_config
 import codecs
 
 
@@ -14,9 +14,10 @@ class ChatConsumer(WebsocketConsumer):
     def connect(self):
         self.accept()
         config = Config()
+        self.config = config
         data_source = config.get_data_source()
-        self.client = client_from_config(config, data_source)
-        self.conversation = Conversation(self.client)
+        self.data_source = data_source
+        self.client = client_from_config(config)
 
     def disconnect(self, close_code):
         pass
@@ -55,7 +56,10 @@ class ChatConsumer(WebsocketConsumer):
 
     def handleMessage(self, text_data_json):
         message = text_data_json["message"]
-        response = self.conversation.handle_response(message, "")
+
+        response = run_team(self.client, self.config, message)[-1]
+        print(response)
+        response = CodeResponse(message, response)
         code_output = self.execute_code(response.code)
         html = self.extract_html(response.code)
         if html:
