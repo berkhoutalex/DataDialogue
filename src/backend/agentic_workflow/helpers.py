@@ -12,12 +12,13 @@ from chat.datasources.source import Source
 class CodeResponse:
     venv = "CodeGenVenv"
 
-    def __init__(self, prompt: str, raw_response: str):
+    def __init__(self, prompt: str, raw_response: str, history: list = []):
         self.raw_response = raw_response
         self.code = self.extract_code()
         self.dependencies = self.extract_dependencies()
         self.prompt = prompt
         self.extras = self.extract_extras()
+        self.history = history
 
     def extract_code(self):
         code = re.search(r"```python(.*?)```", self.raw_response, re.DOTALL)
@@ -34,27 +35,33 @@ class CodeResponse:
             return None
 
     def extract_extras(self):
-        extras = (
-            self.raw_response.replace("```python", "")
-            .replace("```", "")
-            .replace(self.code, "")
-            .replace("~~~deps", "")
-            .replace("~~~", "")
-            .replace(self.dependencies, "")
-            .strip()
-        )
-        return extras
+        if self.code is None:
+            return self.raw_response
+        else:
+            extras = (
+                self.raw_response.replace("```python", "")
+                .replace("```", "")
+                .replace(self.code, "")
+                .replace("~~~deps", "")
+                .replace("~~~", "")
+                .replace(self.dependencies, "")
+                .strip()
+            )
+            return extras
 
     def __str__(self):
         return self.raw_response
 
 
 def install_dependencies(codeResponse: CodeResponse):
-    if "pip" in codeResponse.dependencies:
-        command = f"python3 -m venv {codeResponse.venv} && .\\{codeResponse.venv}\\Scripts\\activate && {codeResponse.dependencies}"
+    if codeResponse.dependencies is None:
+        pass
     else:
-        command = f"python3 -m venv {codeResponse.venv} && .\\{codeResponse.venv}\\Scripts\\activate && pip install {codeResponse.dependencies}"
-    os.system(command)
+        if "pip" in codeResponse.dependencies:
+            command = f"python3 -m venv {codeResponse.venv} && .\\{codeResponse.venv}\\Scripts\\activate && {codeResponse.dependencies}"
+        else:
+            command = f"python3 -m venv {codeResponse.venv} && .\\{codeResponse.venv}\\Scripts\\activate && pip install {codeResponse.dependencies}"
+        os.system(command)
 
 
 def run_code(code, venv):
@@ -96,7 +103,11 @@ def review_code(codeResponse: CodeResponse, error: str, llm, source: Source):
     """
 
     new_code = reviewer.invoke(
-        {"history": [], "step": [prompt], "team-objective": [codeResponse.prompt]}
+        {
+            "history": codeResponse.history,
+            "step": [prompt],
+            "team-objective": [codeResponse.prompt],
+        }
     )["output"]
     code = re.search(r"```python(.*?)```", new_code, re.DOTALL)
     if code and code.group(1) != "":

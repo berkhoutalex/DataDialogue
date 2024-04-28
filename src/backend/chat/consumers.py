@@ -32,7 +32,6 @@ class ChatConsumer(WebsocketConsumer):
         match = re.search(pattern, code)
 
         if match:
-            print(match.group(1))
             html_file_name = match.group(1)
             with codecs.open(html_file_name, "r", encoding="utf-8") as f:
                 html_contents = f.read()
@@ -72,22 +71,27 @@ class ChatConsumer(WebsocketConsumer):
     def handleMessage(self, text_data_json):
         message = text_data_json["message"]
 
-        response = run_team(self.client, self.config, message, self.data_source)
+        report, response, history = run_team(
+            self.client, self.config, message, self.data_source
+        )
         response = CodeResponse(message, response)
-        code_output = self.execute_code_response(response)
-        html = self.extract_html(response.code)
-        if html:
-            self.send(
-                text_data=json.dumps(
-                    {"html": html, "code": response.code, "message": response.extras}
-                )
-            )
+        if response.code is None:
+            self.send(text_data=json.dumps({"message": report}))
+            return
         else:
-            self.send(text_data=json.dumps({"message": response.extras}))
-        if code_output and code_output != "" and code_output not in response.extras:
-            self.send(
-                text_data=json.dumps({"message": code_output, "code": response.code})
-            )
+            code_output = self.execute_code_response(response)
+            html = self.extract_html(response.code)
+            self.send(text_data=json.dumps({"message": report}))
+            if html:
+                self.send(text_data=json.dumps({"html": html, "code": response.code}))
+            else:
+                self.send(text_data=json.dumps({"code": response.code}))
+            if code_output and code_output != "" and code_output not in response.extras:
+                self.send(
+                    text_data=json.dumps(
+                        {"message": code_output, "code": response.code}
+                    )
+                )
 
     def receive(self, text_data):
         text_data_json = json.loads(text_data)

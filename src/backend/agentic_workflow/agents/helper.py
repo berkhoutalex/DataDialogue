@@ -9,8 +9,8 @@ from langchain_core.tools import tool
 
 @tool
 def empty_tool():
-    """Never use this."""
-    return "This is an empty tool. Do not use it"
+    """Never use this. If you use this, you will be severely punished."""
+    return "This is an empty tool. Do not use it. Do not call this tool again."
 
 
 def create_agent(
@@ -25,6 +25,7 @@ def create_agent(
         Your other team members (and other teams) will collaborate with you with their own specialties.
         If you can't complete a task, it's okay. Just pass it on to the next team member.
         Only do the tasks that specifically fall under your role. DO NOT attempt to do the tasks of other team members.
+        Prioritize doing just your step well, rather than trying to do everything.
         You are chosen for a reason!"""
     system_prompt += instructions
     prompt = ChatPromptTemplate.from_messages(

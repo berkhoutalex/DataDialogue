@@ -10,7 +10,7 @@ src/backend/*.png
 *.toml
 src/backend/code.py
 src/backend/CodeGenVenv/*
-
+*.csv
 # C extensions
 *.so
 

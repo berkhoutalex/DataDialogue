@@ -14,6 +14,7 @@ from agentic_workflow.agents.coder_team import (
     dependency_agent,
     reviewer_agent,
 )
+from agentic_workflow.agents.interface_team import reporter_agent, screener_agent
 
 
 class Team:
@@ -43,7 +44,7 @@ class Team:
             print(f"Running step: {step.description}")
             print("\n\n")
             self.run_step(step)
-        return self.history[-1]
+        return self.history
 
 
 def run_team(llm, config, prompt, data_source):
@@ -55,7 +56,9 @@ def run_team(llm, config, prompt, data_source):
     reviewer = reviewer_agent(llm, data_source)
     explorer = data_explorer_agent(llm, data_source)
     dependency = dependency_agent(llm)
+    screener = screener_agent(llm, data_source)
     agent_map = {
+        "screener": screener,
         "search": seacher,
         "researcher": researcher,
         "coder": coder,
@@ -68,4 +71,15 @@ def run_team(llm, config, prompt, data_source):
     print(plan)
     team = Team(prompt, plan, agent_map)
 
-    return team.run()
+    teams_answer = team.run()
+
+    reporter = reporter_agent(llm)
+    user_report = reporter.invoke(
+        {
+            "history": teams_answer,
+            "step": ["Summarize the provided teams work."],
+            "team-objective": [prompt],
+        }
+    )
+
+    return user_report["output"], teams_answer[-1], teams_answer
