@@ -4,7 +4,7 @@
 The objective of Data Dialogue is to interact with arbitrary data sources using natural languages and to keep all the data local to your server. This includes performing data analysis, data visualization, and calculations. 
 
 ## Features
-Models - Anthropic, OpenAI, Ollama
+Models - OpenAI, Ollama, Anthropic, 
 Data Sources - CSV, Sqlite
 
 ## Installation
