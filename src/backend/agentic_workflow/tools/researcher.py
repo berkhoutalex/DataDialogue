@@ -23,3 +23,10 @@ def scrape_webpages(urls: List[str]) -> str:
             for doc in docs
         ]
     )
+
+
+@tool
+def ask_user(question: str) -> str:
+    """Ask the user a question and return their response."""
+    resp = input(question)
+    return resp

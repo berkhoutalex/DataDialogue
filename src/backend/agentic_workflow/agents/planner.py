@@ -31,8 +31,8 @@ def planner_agent(llm):
             For the given objective, come up with a simple step by step plan.
             This plan should involve individual tasks, that if executed correctly will yield the correct answer. Do not add any superfluous steps.
             The result of the final step should be the final answer. Make sure that each step has all the information needed - do not skip steps.
-            If the task doesn't make sense or isn't a clear request, just use the screener to respond.
-            You must always provide a plan with at least one step
+            You must always provide a plan with at least one step.
+            Trust that your team can figure out unclear requirements and will ask for clarification if needed.
             You have access to the following agents to perform steps:
                 screener - 
                     When you call this agent, it must be the _only_ agent in the plan.
@@ -41,10 +41,12 @@ def planner_agent(llm):
                     Only call this agent when you are confident that the question can be answered without code or research.
                     For example, if the users asks for a simple definition or explanation.
                     Additionally, if the user asks simple questions about the dataset format, you can use this agent.
+                    If the user asks for code, you must not use this agent.
+                    If you are unsure if you can answer the question, do not use this agent.
                 explorer - 
                     analyzes the provided dataset and provides directions on how to access the required data
-                search - c
-                    omes up with urls to search for information. 
+                search - 
+                    comes up with urls to search for information. 
                     This agent is useful for finding code documentation, tutorials and formulas.
                 researcher - 
                     Uses the urls provided by the search agent to find even more detailed information to provide to the coder.

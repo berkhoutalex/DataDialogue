@@ -1,5 +1,5 @@
-from agentic_workflow.agents.helper import create_agent
-from agentic_workflow.tools.researcher import scrape_webpages, tavily_tool
+from agentic_workflow.agents.helper import Work, create_agent, make_prompt
+from agentic_workflow.tools.researcher import ask_user, scrape_webpages, tavily_tool
 from chat.datasources.source import Source
 
 
@@ -17,6 +17,19 @@ def search_agent(llm, config):
             Do NOT use code that doesn't support outputting as html.
         """,
     )
+
+
+def run_search(search):
+    def _run_search(step, work: Work):
+        prompt = make_prompt(step, work)
+
+        response = search.invoke(prompt)["output"]
+        print(response)
+        work.search_output = response
+
+        return work
+
+    return _run_search
 
 
 def research_agent(llm):
@@ -38,12 +51,27 @@ def research_agent(llm):
     )
 
 
+def run_research(research):
+    def _run_research(step, work: Work):
+        prompt = make_prompt(step, work)
+
+        response = research.invoke(prompt)["output"]
+        print(response)
+        work.research_output = response
+
+        return work
+
+    return _run_research
+
+
+
 def data_explorer_agent(llm, data_source: Source):
     return create_agent(
         llm,
-        [],
+        [ask_user],
         f"""
             You are a data scientist who is responsible for analyzing the provided data set.
+            You may ask questions of the user if you need clarification on the meaning of any part of the data.
             In your response, return instructions for the coder on how to access the data required to complete the task.
             Provide specifics, such as the platform (such as sqlite, csv, etc) and information about specific tables or columns.
             Be sure to include full file paths where necessary.
@@ -52,3 +80,16 @@ def data_explorer_agent(llm, data_source: Source):
             Data Source: {data_source.data_to_prompt()}
         """,
     )
+
+
+def run_data_explorer(data_explorer):
+    def _run_data_explorer(step, work: Work):
+        prompt = make_prompt(step, work)
+
+        response = data_explorer.invoke(prompt)["output"]
+        print(response)
+        work.data_explorer_output = response
+
+        return work
+
+    return _run_data_explorer

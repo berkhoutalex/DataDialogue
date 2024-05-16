@@ -3,14 +3,12 @@ import re
 
 from channels.generic.websocket import WebsocketConsumer
 from agentic_workflow.agents.orchestration import run_team
+from agentic_workflow.agents.helper import Work
 from chat.config import Config
 from agentic_workflow.helpers import (
-    CodeResponse,
     client_from_config,
     install_dependencies,
     run_code,
-    review_code,
-    run_code_response,
 )
 import codecs
 
@@ -41,21 +39,16 @@ class ChatConsumer(WebsocketConsumer):
             return None
 
     def execute_code(self, code: str):
-        output = run_code(code, CodeResponse.venv)
+        output = run_code(code)
         return output
 
-    def execute_code_response(self, code_response: CodeResponse):
-        install_dependencies(code_response)
-        success, output = run_code_response(code_response)
+    def execute_code_response(self, code, deps):
+        install_dependencies(deps)
+        success, output = run_code(code)
         if success:
             return output
         else:
-            new_code_response = review_code(
-                code_response, output, self.client, self.data_source
-            )
-            install_dependencies(new_code_response)
-            success, output = run_code_response(new_code_response)
-            return output
+            return "Code failed to run with error: " + output
 
     def handleCode(self, text_data_json):
         code = text_data_json["code"]
@@ -71,25 +64,27 @@ class ChatConsumer(WebsocketConsumer):
     def handleMessage(self, text_data_json):
         message = text_data_json["message"]
 
-        report, response, history = run_team(
+        work : Work = run_team(
             self.client, self.config, message, self.data_source
         )
-        response = CodeResponse(message, response)
-        if response.code is None:
-            self.send(text_data=json.dumps({"message": report}))
+        
+        if not work.code_output:
+            self.send(text_data=json.dumps({"message": work.reporter_output.report}))
             return
         else:
-            code_output = self.execute_code_response(response)
-            html = self.extract_html(response.code)
-            self.send(text_data=json.dumps({"message": report}))
+            code = work.code_output.code
+            deps = work.dependency_output.dependencies
+            code_output = self.execute_code_response(code, deps)
+            html = self.extract_html(code)
+            self.send(text_data=json.dumps({"message": work.reporter_output.report}))
             if html:
-                self.send(text_data=json.dumps({"html": html, "code": response.code}))
+                self.send(text_data=json.dumps({"html": html, "code": code}))
             else:
-                self.send(text_data=json.dumps({"code": response.code}))
-            if code_output and code_output != "" and code_output not in response.extras:
+                self.send(text_data=json.dumps({"code": code}))
+            if code_output and code_output != "" and code_output not in work.reporter_output.report:
                 self.send(
                     text_data=json.dumps(
-                        {"message": code_output, "code": response.code}
+                        {"message": code_output, "code": code}
                     )
                 )
 

@@ -1,11 +1,17 @@
-from agentic_workflow.agents.helper import create_agent
+from agentic_workflow.agents.helper import (
+    Report,
+    ScreenedAnswer,
+    Work,
+    create_structured_agent,
+    make_prompt,
+)
 from chat.datasources.source import Source
 
 
 def reporter_agent(llm):
-    return create_agent(
+    return create_structured_agent(
         llm,
-        [],
+        Report,
         """
             You are a member of a data analysis team who is responsible for reporting the results of the analysis.
             In your response, provide a summary of the steps performed, the results obtained, and the conclusions drawn.
@@ -17,10 +23,23 @@ def reporter_agent(llm):
     )
 
 
+def run_reporter(reporter):
+    def _run_reporter(step, work: Work):
+        prompt = make_prompt(step, work)
+
+        response: Report = reporter.invoke(prompt)
+        print(response)
+        work.reporter_output = response
+
+        return work
+
+    return _run_reporter
+
+
 def screener_agent(llm, data_source: Source):
-    return create_agent(
+    return create_structured_agent(
         llm,
-        [],
+        ScreenedAnswer,
         f"""
             You are a member of a data analysis team who is responsible for screening the users request and answering softballs before it returns to the entire team.
             In your response, provide an answer to the users question directly. 
@@ -31,3 +50,16 @@ def screener_agent(llm, data_source: Source):
             Data Source: {data_source.data_to_prompt()}
         """,
     )
+
+
+def run_screener(screener):
+    def _run_screener(step, work: Work):
+        prompt = make_prompt(step, work)
+
+        response: ScreenedAnswer = screener.invoke(prompt)
+        print(response)
+        work.screener_output = response
+
+        return work
+
+    return _run_screener
