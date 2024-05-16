@@ -5,9 +5,10 @@ from chat.datasources.source import Source
 class CSVDataSource(Source):
     file_schemas = {}
 
-    def __init__(self, files_path):
+    def __init__(self, files_path, description):
         self.files_path = files_path
         self.path_to_files_with_headers()
+        self.description = description
 
     def path_to_files_with_headers(self):
         for file in os.listdir(self.files_path):
@@ -26,5 +27,6 @@ class CSVDataSource(Source):
         prompt = (
             "You have access to the following files given as FileName:headers "
             + ", ".join(files)
+            + f"\n The user described the data as: {self.description}"
         )
         return prompt

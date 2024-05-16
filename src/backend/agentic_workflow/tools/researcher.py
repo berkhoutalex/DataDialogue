@@ -9,7 +9,7 @@ from chat.config import Config
 
 def tavily_tool(config: Config):
     os.environ["TAVILY_API_KEY"] = config.get_tavily_api_key()
-    return TavilySearchResults(max_results=2)
+    return TavilySearchResults(max_results=1)
 
 
 @tool
@@ -19,14 +19,7 @@ def scrape_webpages(urls: List[str]) -> str:
     docs = loader.load()
     return "\n\n".join(
         [
-            f'<Document name="{doc.metadata.get("title", "")}">\n{doc.page_content}\n</Document>'
+            f'<Document name="{doc.metadata.get("title", "")}">\n{doc.page_content[:3000]}\n</Document>'
             for doc in docs
         ]
     )
-
-
-@tool
-def ask_user(question: str) -> str:
-    """Ask the user a question and return their response."""
-    resp = input(question)
-    return resp

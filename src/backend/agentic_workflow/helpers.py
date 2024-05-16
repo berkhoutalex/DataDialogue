@@ -1,4 +1,3 @@
-import re
 import subprocess
 from typing import List
 from langchain_openai.chat_models import ChatOpenAI
@@ -9,7 +8,8 @@ import os
 
 _VENV_ = "CodeGenVenv"
 
-def install_dependencies(deps : List[str]):
+
+def install_dependencies(deps: List[str]):
     if not deps:
         pass
     else:

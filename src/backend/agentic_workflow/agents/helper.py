@@ -18,7 +18,7 @@ class Dependency(BaseModel):
     dependencies: list[str] = Field(
         description="The list of pip installable dependencies required to run the code"
     )
-    
+
     def __str__(self):
         return " ".join(self.dependencies)
 
@@ -26,9 +26,9 @@ class Dependency(BaseModel):
 class Code(BaseModel):
     """The result of your coding work"""
 
-    code: str = Field(description="The code thus far for the task")
-    description: str = Field(description="Explanation of the code")
-    
+    code: str = Field(description="The single set of code thus far for the task. This should include all the code necessary to run the task.")
+    description: str = Field(description="The description of the code")
+
     def __str__(self):
         return self.code
 
@@ -37,7 +37,7 @@ class Report(BaseModel):
     """The result of your reporting work"""
 
     report: str = Field(description="The report thus far for the task")
-    
+
     def __str__(self):
         return self.report
 
@@ -46,7 +46,7 @@ class ScreenedAnswer(BaseModel):
     """The result of your screening work"""
 
     answer: str = Field(description="The answer to the user's question")
-    
+
     def __str__(self):
         return self.answer
 
@@ -64,10 +64,12 @@ class Work:
     research_output: Optional[str]
     data_explorer_output: Optional[str]
 
-    code_output: Optional[Code]
+    coder_output: Optional[Code]
+    code_results: Optional[str]
     dependency_output: Optional[Dependency]
 
     reporter_output: Optional[Report]
+
     def __init__(self):
         self.planner_output = None
         self.screener_output = None
@@ -77,6 +79,8 @@ class Work:
         self.code_output = None
         self.dependency_output = None
         self.reporter_output = None
+        self.code_results = None
+
     def format_work_json(self):
         base_json = {}
         if self.planner_output:
@@ -95,33 +99,24 @@ class Work:
             base_json["dependency_output"] = [str(self.dependency_output)]
         if self.reporter_output:
             base_json["reporter_output"] = [str(self.reporter_output)]
+        if self.code_results:
+            base_json["code_results"] = [str(self.code_results)]
         return base_json
-
-
-BASE_INSTRUCTION = """
-        Work autonomously according to your specialty, using the tools available to you.
-        If you are making a plot, save it to an html file in the current directory. Do not render the plot, just save it to an html file.
-        Your team may provide you with information to help you complete your task. Be sure to use their input to improve your work.
-        Your other team members will collaborate with you with their own specialties.
-        If you can't complete a task, it's okay. Just pass it on to the next team member.
-        Only do the tasks that specifically fall under your role. DO NOT attempt to do the tasks of other team members.
-        Prioritize doing just your step well, rather than trying to do everything.
-        You are chosen for a reason!"""
-
-
+    
 def create_agent(
     llm: BaseChatModel,
     tools: list,
     system_prompt: str,
 ):
-    system_prompt = BASE_INSTRUCTION + system_prompt
+    system_prompt = system_prompt
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
                 system_prompt,
             ),
-            MessagesPlaceholder(variable_name="step", optional=False),
+            MessagesPlaceholder(variable_name="task", optional=False),
+            MessagesPlaceholder(variable_name="original_request", optional=True),
             MessagesPlaceholder(variable_name="planner_output", optional=True),
             MessagesPlaceholder(variable_name="screener_output", optional=True),
             MessagesPlaceholder(variable_name="search_output", optional=True),
@@ -129,6 +124,7 @@ def create_agent(
             MessagesPlaceholder(variable_name="data_explorer_output", optional=True),
             MessagesPlaceholder(variable_name="code_output", optional=True),
             MessagesPlaceholder(variable_name="dependency_output", optional=True),
+            MessagesPlaceholder(variable_name="code_results", optional=True),
             MessagesPlaceholder(variable_name="reporter_output", optional=True),
             MessagesPlaceholder(variable_name="agent_scratchpad", optional=True),
         ]
@@ -136,19 +132,20 @@ def create_agent(
     if not tools:
         tools = [empty_tool]
     agent = create_tool_calling_agent(llm, tools, prompt)
-    executor = AgentExecutor(agent=agent, tools=tools)
+    executor = AgentExecutor(agent=agent, tools=tools, handle_parsing_errors=True)
     return executor
 
 
 def create_structured_agent(llm: BaseChatModel, structure, system_prompt):
-    system_prompt = BASE_INSTRUCTION + system_prompt
+    system_prompt = system_prompt
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
                 system_prompt,
             ),
-            MessagesPlaceholder(variable_name="step", optional=False),
+            MessagesPlaceholder(variable_name="task", optional=False),
+            MessagesPlaceholder(variable_name="original_request", optional=True),
             MessagesPlaceholder(variable_name="planner_output", optional=True),
             MessagesPlaceholder(variable_name="screener_output", optional=True),
             MessagesPlaceholder(variable_name="search_output", optional=True),
@@ -156,6 +153,7 @@ def create_structured_agent(llm: BaseChatModel, structure, system_prompt):
             MessagesPlaceholder(variable_name="data_explorer_output", optional=True),
             MessagesPlaceholder(variable_name="code_output", optional=True),
             MessagesPlaceholder(variable_name="dependency_output", optional=True),
+            MessagesPlaceholder(variable_name="code_results", optional=True),
             MessagesPlaceholder(variable_name="reporter_output", optional=True),
             MessagesPlaceholder(variable_name="agent_scratchpad", optional=True),
         ]
@@ -166,8 +164,8 @@ def create_structured_agent(llm: BaseChatModel, structure, system_prompt):
     return agent
 
 
-def make_prompt(step:Step, work:Work):
+def make_prompt(step: Step, work: Work):
     work_json = work.format_work_json()
-    step_json = {"step": [step.description]}
+    step_json = {"task": [step.description]}
     full_json = {**work_json, **step_json}
     return full_json

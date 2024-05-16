@@ -78,10 +78,11 @@ class Config:
 
     def get_data_source(self):
         source_type = self.config["DATA_SOURCE"]["source_type"]
+        source_description = self.config["DATA_SOURCE"]["high_level_description"]
         if source_type == "csvs":
-            return CSVDataSource(self.config["DATA_SOURCE"]["source_path"])
+            return CSVDataSource(self.config["DATA_SOURCE"]["source_path"], source_description)
         elif source_type == "sqlite":
-            return SqliteDataSource(self.config["DATA_SOURCE"]["source_path"])
+            return SqliteDataSource(self.config["DATA_SOURCE"]["source_path"], source_description)
 
     def set_data_source(self, source_type, source_path):
         self.set("DATA_SOURCE", "source_type", source_type)

@@ -4,10 +4,11 @@ from chat.datasources.source import Source
 
 
 class SqliteDataSource(Source):
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, description):
         self.db_path = db_path
         self.connect()
         self.schema = self.get_schema()
+        self.description = description
 
     def connect(self):
         self.connection = sqlite3.connect(self.db_path)
@@ -43,5 +44,6 @@ class SqliteDataSource(Source):
             + self.db_path
             + " with the following schema - "
             + ", ".join([self.table_to_string(table[0]) for table in self.schema])
+            + f"\n The user described the data as: {self.description}"
         )
         return prompt

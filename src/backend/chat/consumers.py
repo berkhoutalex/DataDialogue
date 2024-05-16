@@ -64,29 +64,26 @@ class ChatConsumer(WebsocketConsumer):
     def handleMessage(self, text_data_json):
         message = text_data_json["message"]
 
-        work : Work = run_team(
-            self.client, self.config, message, self.data_source
-        )
-        
+        work: Work = run_team(self.client, self.config, message, self.data_source)
+
         if not work.code_output:
             self.send(text_data=json.dumps({"message": work.reporter_output.report}))
             return
         else:
             code = work.code_output.code
-            deps = work.dependency_output.dependencies
-            code_output = self.execute_code_response(code, deps)
+            code_output = work.code_results
             html = self.extract_html(code)
             self.send(text_data=json.dumps({"message": work.reporter_output.report}))
             if html:
                 self.send(text_data=json.dumps({"html": html, "code": code}))
             else:
                 self.send(text_data=json.dumps({"code": code}))
-            if code_output and code_output != "" and code_output not in work.reporter_output.report:
-                self.send(
-                    text_data=json.dumps(
-                        {"message": code_output, "code": code}
-                    )
-                )
+            if (
+                code_output
+                and code_output != ""
+                and code_output not in work.reporter_output.report
+            ):
+                self.send(text_data=json.dumps({"message": code_output, "code": code}))
 
     def receive(self, text_data):
         text_data_json = json.loads(text_data)
