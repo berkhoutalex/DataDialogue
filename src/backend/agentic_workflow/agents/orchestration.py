@@ -1,3 +1,4 @@
+from typing import Optional
 from agentic_workflow.agents.planner import Plan, Step, planner_agent
 from agentic_workflow.agents.researcher_team import (
     data_explorer_agent,
@@ -25,16 +26,17 @@ from agentic_workflow.agents.interface_team import (
     run_screener,
     screener_agent,
 )
-from agentic_workflow.agents.helper import Work
+from agentic_workflow.agents.helper import Code, Work
 from agentic_workflow.helpers import install_dependencies, run_code
 
 
 class Team:
-    def __init__(self, objective, plan, workers):
+    def __init__(self, objective, plan, workers, existing_code: Optional[Code]):
         self.plan = plan
         self.workers = workers
         self.work = Work()
         self.work.original_request = objective
+        self.work.code_output = existing_code
         self.objective = objective
 
     def run_step(self, step: Step):
@@ -78,8 +80,10 @@ class Team:
         return self.work
 
 
-def run_team(llm, config, prompt, data_source) -> Work:
+def run_team(llm, config, prompt, existing_code, data_source) -> Work:
     planner = planner_agent(llm)
+    if existing_code:
+        prompt = prompt + "\n\n" + "Existing code: \n" + existing_code.code
     plan: Plan = planner.invoke(prompt)
     print(plan)
 
@@ -97,15 +101,14 @@ def run_team(llm, config, prompt, data_source) -> Work:
         "search": run_search(seacher),
         "researcher": run_research(researcher),
         "coder": run_coder(coder),
-        "feature_developer": run_coder(feature_dev), 
+        "feature_developer": run_coder(feature_dev),
         "reviewer": run_reviewer(reviewer),
         "explorer": run_data_explorer(explorer),
         "dependencybot": run_dependency(dependency),
         "debugger": run_debugger(debugger),
     }
 
-
-    team = Team(prompt, plan, agent_map)
+    team = Team(prompt, plan, agent_map, existing_code)
 
     teams_answer = team.run()
 

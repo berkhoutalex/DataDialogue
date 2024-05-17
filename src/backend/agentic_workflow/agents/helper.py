@@ -16,7 +16,7 @@ class Dependency(BaseModel):
     """The dependencies required to run the code"""
 
     dependencies: list[str] = Field(
-        description="The list of pip installable dependencies required to run the code"
+        description="The list of pip installable dependencies required to run the code. Should just be the package name, not the command or version number."
     )
 
     def __str__(self):
@@ -26,7 +26,9 @@ class Dependency(BaseModel):
 class Code(BaseModel):
     """The result of your coding work"""
 
-    code: str = Field(description="The single set of code thus far for the task. This should include all the code necessary to run the task.")
+    code: str = Field(
+        description="The single set of code thus far for the task. This should include all the code necessary to run the task."
+    )
     description: str = Field(description="The description of the code")
 
     def __str__(self):
@@ -102,7 +104,8 @@ class Work:
         if self.code_results:
             base_json["code_results"] = [str(self.code_results)]
         return base_json
-    
+
+
 def create_agent(
     llm: BaseChatModel,
     tools: list,

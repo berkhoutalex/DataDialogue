@@ -29,7 +29,9 @@ Your team consists of the following members which can be assigned to a specific 
     Can only be used after the search agent.
   coder - 
     writes the code
-  reviewer - reviews the code for logical flaws and syntax errors
+  reviewer - 
+    reviews the code for logical flaws and syntax errors
+    Should only be used once
   dependencybot - 
     creates a list of python dependecies used by the code. 
     If you used the coder, you must use the dependencybot
