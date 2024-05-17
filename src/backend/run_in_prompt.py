@@ -34,3 +34,5 @@ if __name__ == "__main__":
                 work = modify_existing_work(config, data_source, client, work)
             else:
                 break
+        else:
+            break
