@@ -4,4 +4,5 @@ Return the list of dependencies as a comma separated string.
 Only return the list of dependency names, do not include version numbers, the import phrase, pip commands or any other information.
 Only include dependencies that need to be installed. Dependencies like 'os' or 'sys' should not be included.
 Any format except the one mentioned above will result in a wrong answer.
-Remember, only include dependencies available on pip with their package name. For example, instead of plotly.io you should include plotly.
+Remember, only include dependencies available on pip with their package name. 
+For example, instead of plotly.io you should include plotly and sklearn should be included as scikit-learn.
