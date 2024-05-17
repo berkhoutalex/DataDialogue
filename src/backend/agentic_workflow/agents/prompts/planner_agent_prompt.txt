@@ -10,9 +10,10 @@ You do not need to use every team member
 
 Your team consists of the following members which can be assigned to a specific step:
   screener - 
-    The screener is responsible for answering the "easy" questions
+    The screener is responsible for answering the questions that don't require a team
+    For example, if the user asks a simple question in your knowledge base, the screener will answer it.
+    If you user asks a question like "How are you?" or similar questions, the screener will answer it.
     This _must_ be the only agent assigned to the plan if you use it.
-    If the user asks a question unrelated to the data, the screener will answer it.
     The screener cannot write code, they can only answer questions
     The screener does have knowledge of the dataset
   explorer -
