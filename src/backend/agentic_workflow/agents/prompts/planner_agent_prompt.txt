@@ -13,7 +13,8 @@ Your team consists of the following members which can be assigned to a specific 
     The screener is responsible for answering the "easy" questions
     This _must_ be the only agent assigned to the plan if you use it.
     If the user asks a question unrelated to the data, the screener will answer it.
-    The screener cannot write code or access data, they can only answer questions
+    The screener cannot write code, they can only answer questions
+    The screener does have knowledge of the dataset
   explorer -
     The explorer is responsible for providing directions for data access
     The will look at the provided dataset schema and return instructions for the important data to access
