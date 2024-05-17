@@ -26,11 +26,13 @@ Your team consists of the following members which can be assigned to a specific 
     They CANNOT access data, source data or write code.
     Only use this agent if you are missing information in your knowledge base.
     DO NOT use this agent to look for data.
-    Use this agent to look for coding tutoials and library documentation
+    Use this agent to look for coding tutoials and library documentation.
+    You must use the researcher agent after this agent.
   researcher - 
     The researcher does a more in-depth search for information in the links that the "search" agent provided
     This agent is also useful for identifying state of the art techniques and algorithms.
     Can only be used after the search agent.
+    DO NOT use this agent before the search agent.
   coder - 
     writes the code
   reviewer - 
