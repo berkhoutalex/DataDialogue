@@ -19,7 +19,7 @@ def scrape_webpages(urls: List[str]) -> str:
     docs = loader.load()
     return "\n\n".join(
         [
-            f'<Document name="{doc.metadata.get("title", "")}">\n{doc.page_content[:3000]}\n</Document>'
+            f'<Document name="{doc.metadata.get("title", "")}">\n{doc.page_content[:5000]}\n</Document>'
             for doc in docs
         ]
     )
