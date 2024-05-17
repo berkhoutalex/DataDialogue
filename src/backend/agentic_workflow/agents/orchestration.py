@@ -112,9 +112,12 @@ def run_team(llm, config, prompt, existing_code, data_source) -> Work:
 
     teams_answer = team.run()
 
-    reporter = reporter_agent(llm)
-    mk_report = run_reporter(reporter)
-    report_step = Step(worker="reporter", description="Report the results")
-    work_with_report = mk_report(report_step, teams_answer)
+    if teams_answer.screener_output and not teams_answer.code_output:
+        return teams_answer
+    else:
+        reporter = reporter_agent(llm)
+        mk_report = run_reporter(reporter)
+        report_step = Step(worker="reporter", description="Report the results")
+        work_with_report = mk_report(report_step, teams_answer)
 
-    return work_with_report
+        return work_with_report
