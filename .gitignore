@@ -13,6 +13,7 @@ src/backend/CodeGenVenv/*
 *.csv
 # C extensions
 *.so
+*.pkl
 
 
 # Distribution / packaging
