@@ -3,7 +3,7 @@ import FullChat, { Message } from './Dialogue/FullChat';
 import { useState, useRef, useEffect } from 'react';
 import CodeEditor from './Editor';
 
-const WS_URL = 'ws://' + "localhost:8000" + '/ws/' + 'chat/';
+const WS_URL = 'ws://localhost:8000/ws/chat/';
 
 
 const Chat = () => {
