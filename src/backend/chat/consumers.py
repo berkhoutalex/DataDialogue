@@ -63,27 +63,49 @@ class ChatConsumer(WebsocketConsumer):
 
     def handleMessage(self, text_data_json):
         message = text_data_json["message"]
+        try:
+            work: Work = run_team(
+                self.client, self.config, message, "", self.data_source
+            )
 
-        work: Work = run_team(self.client, self.config, message, self.data_source)
-
-        if not work.code_output:
-            self.send(text_data=json.dumps({"message": work.reporter_output.report}))
-            return
-        else:
-            code = work.code_output.code
-            code_output = work.code_results
-            html = self.extract_html(code)
-            self.send(text_data=json.dumps({"message": work.reporter_output.report}))
-            if html:
-                self.send(text_data=json.dumps({"html": html, "code": code}))
+            if not work.code_output:
+                self.send(
+                    text_data=json.dumps({"message": work.reporter_output.report})
+                )
+                return
             else:
-                self.send(text_data=json.dumps({"code": code}))
-            if (
-                code_output
-                and code_output != ""
-                and code_output not in work.reporter_output.report
-            ):
-                self.send(text_data=json.dumps({"message": code_output, "code": code}))
+                code = work.code_output.code
+                code_output = work.code_results
+                html = self.extract_html(code)
+                self.send(
+                    text_data=json.dumps({"message": work.reporter_output.report})
+                )
+                if html:
+                    self.send(text_data=json.dumps({"html": html, "code": code}))
+                else:
+                    self.send(text_data=json.dumps({"code": code}))
+                if (
+                    code_output
+                    and code_output != ""
+                    and code_output not in work.reporter_output.report
+                ):
+                    self.send(
+                        text_data=json.dumps({"message": code_output, "code": code})
+                    )
+        except Exception as e:
+            import traceback
+
+            error_message = str(e)
+            tb = traceback.format_exc()
+            self.send(
+                text_data=json.dumps(
+                    {
+                        "error": "An error occurred while processing your request.",
+                        "details": error_message,
+                        "traceback": tb,
+                    }
+                )
+            )
 
     def receive(self, text_data):
         text_data_json = json.loads(text_data)

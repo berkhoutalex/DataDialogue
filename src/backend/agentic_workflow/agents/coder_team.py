@@ -3,7 +3,6 @@ from agentic_workflow.agents.helper import (
     Code,
     Dependency,
     Work,
-    create_agent,
     create_structured_agent,
     make_prompt,
 )
@@ -80,9 +79,9 @@ def dependency_agent(llm):
     filename = os.path.join(dirname, "./prompts/coder_team/dependency_agent_prompt.txt")
     with open(filename, "r") as f:
         dependency_agent_prompt = f.read()
-    return create_agent(
+    return create_structured_agent(
         llm,
-        [],
+        Dependency,
         dependency_agent_prompt,
     )
 
@@ -92,10 +91,8 @@ def run_dependency(dependency):
         prompt = make_prompt(step, work)
 
         response: Dependency = dependency.invoke(prompt)
-        deps = response["output"].split(",")
-        deps = Dependency(dependencies=deps)
-        print(deps)
-        work.dependency_output = deps
+        print(response)
+        work.dependency_output = response
 
         return work
 

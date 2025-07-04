@@ -17,9 +17,9 @@ This projects uses PDM (https://github.com/pdm-project/pdm) for the backend and 
   ```bash
     cd src/backend
     pdm install
-    python migrations.py makemigrations
-    python migrations.py migrate
-    python migrate.py runserver
+    python manage.py makemigrations
+    python manage.py migrate
+    python manage.py runserver
   ```
 
 ### Frontend
