@@ -4,7 +4,7 @@
 The objective of Data Dialogue is to interact with arbitrary data sources using natural languages and to keep all the data local to your server. This includes performing data analysis, data visualization, and calculations. 
 
 ## Features
-Models - Anthropic, OpenAI, Ollama
+Models - OpenAI, Ollama, Anthropic, 
 Data Sources - CSV, Sqlite
 
 ## Installation
@@ -17,9 +17,9 @@ This projects uses PDM (https://github.com/pdm-project/pdm) for the backend and 
   ```bash
     cd src/backend
     pdm install
-    python migrations.py makemigrations
-    python migrations.py migrate
-    python migrate.py runserver
+    python manage.py makemigrations
+    python manage.py migrate
+    python manage.py runserver
   ```
 
 ### Frontend

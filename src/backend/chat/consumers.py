@@ -1,12 +1,15 @@
-from io import StringIO
 import json
 import re
-import sys
 
 from channels.generic.websocket import WebsocketConsumer
+from agentic_workflow.agents.orchestration import run_team
+from agentic_workflow.agents.helper import Work
 from chat.config import Config
-from chat.clients.client_helper import client_from_config
-from chat.prompting.conversation import Conversation
+from agentic_workflow.helpers import (
+    client_from_config,
+    install_dependencies,
+    run_code,
+)
 import codecs
 
 
@@ -14,9 +17,10 @@ class ChatConsumer(WebsocketConsumer):
     def connect(self):
         self.accept()
         config = Config()
+        self.config = config
         data_source = config.get_data_source()
-        self.client = client_from_config(config, data_source)
-        self.conversation = Conversation(self.client)
+        self.data_source = data_source
+        self.client = client_from_config(config)
 
     def disconnect(self, close_code):
         pass
@@ -26,7 +30,6 @@ class ChatConsumer(WebsocketConsumer):
         match = re.search(pattern, code)
 
         if match:
-            print(match.group(1))
             html_file_name = match.group(1)
             with codecs.open(html_file_name, "r", encoding="utf-8") as f:
                 html_contents = f.read()
@@ -35,12 +38,17 @@ class ChatConsumer(WebsocketConsumer):
         else:
             return None
 
-    def execute_code(self, code):
-        old_stdout = sys.stdout
-        redirected_output = sys.stdout = StringIO()
-        exec(code)
-        sys.stdout = old_stdout
-        return redirected_output.getvalue()
+    def execute_code(self, code: str):
+        output = run_code(code)
+        return output
+
+    def execute_code_response(self, code, deps):
+        install_dependencies(deps)
+        success, output = run_code(code)
+        if success:
+            return output
+        else:
+            return "Code failed to run with error: " + output
 
     def handleCode(self, text_data_json):
         code = text_data_json["code"]
@@ -55,20 +63,48 @@ class ChatConsumer(WebsocketConsumer):
 
     def handleMessage(self, text_data_json):
         message = text_data_json["message"]
-        response = self.conversation.handle_response(message, "")
-        code_output = self.execute_code(response.code)
-        html = self.extract_html(response.code)
-        if html:
+        try:
+            work: Work = run_team(
+                self.client, self.config, message, "", self.data_source
+            )
+
+            if not work.code_output:
+                self.send(
+                    text_data=json.dumps({"message": work.reporter_output.report})
+                )
+                return
+            else:
+                code = work.code_output.code
+                code_output = work.code_results
+                html = self.extract_html(code)
+                self.send(
+                    text_data=json.dumps({"message": work.reporter_output.report})
+                )
+                if html:
+                    self.send(text_data=json.dumps({"html": html, "code": code}))
+                else:
+                    self.send(text_data=json.dumps({"code": code}))
+                if (
+                    code_output
+                    and code_output != ""
+                    and code_output not in work.reporter_output.report
+                ):
+                    self.send(
+                        text_data=json.dumps({"message": code_output, "code": code})
+                    )
+        except Exception as e:
+            import traceback
+
+            error_message = str(e)
+            tb = traceback.format_exc()
             self.send(
                 text_data=json.dumps(
-                    {"html": html, "code": response.code, "message": response.extras}
+                    {
+                        "error": "An error occurred while processing your request.",
+                        "details": error_message,
+                        "traceback": tb,
+                    }
                 )
-            )
-        else:
-            self.send(text_data=json.dumps({"message": response.extras}))
-        if code_output and code_output != "" and code_output not in response.extras:
-            self.send(
-                text_data=json.dumps({"message": code_output, "code": response.code})
             )
 
     def receive(self, text_data):

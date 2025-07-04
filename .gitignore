@@ -6,9 +6,15 @@ __pycache__/
 *$py.class
 src/frontend/node_modules/*
 *.db
+src/backend/*.png
 *.toml
+src/backend/code.py
+src/backend/CodeGenVenv/*
+*.csv
 # C extensions
 *.so
+*.pkl
+
 
 # Distribution / packaging
 .Python

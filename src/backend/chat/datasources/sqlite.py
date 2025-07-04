@@ -4,10 +4,11 @@ from chat.datasources.source import Source
 
 
 class SqliteDataSource(Source):
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, description):
         self.db_path = db_path
         self.connect()
         self.schema = self.get_schema()
+        self.description = description
 
     def connect(self):
         self.connection = sqlite3.connect(self.db_path)
@@ -38,12 +39,11 @@ class SqliteDataSource(Source):
         )
 
     def data_to_prompt(self):
-        return [
-            {
-                "role": "system",
-                "content": "You have access to a sqllite database located at "
-                + self.db_path
-                + " with the following schema - "
-                + ", ".join([self.table_to_string(table[0]) for table in self.schema]),
-            }
-        ]
+        prompt = (
+            "You have access to a sqlite database located at "
+            + self.db_path
+            + " with the following schema - "
+            + ", ".join([self.table_to_string(table[0]) for table in self.schema])
+            + f"\n The user described the data as: {self.description}"
+        )
+        return prompt

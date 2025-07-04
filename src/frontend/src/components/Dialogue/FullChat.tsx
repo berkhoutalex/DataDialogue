@@ -5,7 +5,7 @@ import userImg from "./user.png";
 import botImg from "./bot.png";
 import { UserMessage } from "./UserMessage";
 import { BotMessage } from "./BotMessage";
-import { FormEvent } from "react";
+import { FormEvent, useRef } from "react";
 import React from "react";
 
 const BotAvatar = () => (
@@ -79,18 +79,17 @@ function FullChat(props: FullChatProps) {
     props.addMessage(message);
     setMessage("");
   }
-
   return (
     <div style={{ display:"flex", flexDirection:"column", marginLeft: "0", backgroundColor: "#141414", border: "1px solid #000000", width:"100%", height:"100%"}}>
       <ChatBox>
         {props.messages.map((m, i) =>
           m.from === "user" ? (
             <UserMessage key={i} avatar={<UserAvatar />}>
-              {m.content}
+              <p style={{whiteSpace:"pre-wrap"}}>{m.content}</p>
             </UserMessage>
           ) : (
             <BotMessage key={i} avatar={<BotAvatar />}>
-              {m.content}
+              <p style={{whiteSpace:"pre-wrap"}}>{m.content}</p>
             </BotMessage>
           )
         )}
@@ -99,12 +98,21 @@ function FullChat(props: FullChatProps) {
         <TextField
           id="outlined-basic"
           variant="outlined"
-          sx={{ width: "100%", backgroundColor: "#FFFFFF" }}
+          multiline={true}
+          sx={{ width: "100%", backgroundColor: "#FFFFFF", textWrap: "wrap"}}
           placeholder="Enter your prompt here"
           value={message}
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
             setMessage(event.target.value);
           }}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                props.addMessage(message);
+                setMessage("");
+            }
+            }
+          }
         />
       </form>
     </div>
