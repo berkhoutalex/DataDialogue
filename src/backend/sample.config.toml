@@ -6,6 +6,7 @@ model = "wizardcoder:7b-python"
 CLAUDE = "<YOUR_CLAUDE_API_KEY>"
 OPENAI = "<YOUR_OPEN_AI_API_KEY"
 OLLAMA = "<YOUR_OLLAMA_ENDPOINT>"
+TAVILY = "<YOUR_TAVILY_API_KEY>"
 
 [DATA_SOURCE]
 source_type = "csvs" # "csvs" or "sqlite"

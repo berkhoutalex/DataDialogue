@@ -21,6 +21,9 @@ class Config:
     def get_ollama_api_endpoint(self):
         return self.config["API_KEYS"]["OLLAMA"]
 
+    def get_tavily_api_key(self):
+        return self.config["API_KEYS"]["TAVILY"]
+
     def get_model_name(self):
         return self.config["MODEL"]["model"]
 
@@ -39,6 +42,9 @@ class Config:
 
     def set_ollama_api_endpoint(self, value):
         self.set("API_KEYS", "OLLAMA", value)
+
+    def set_tavily_api_key(self, value):
+        self.set("API_KEYS", "TAVILY", value)
 
     def set_model_name(self, value):
         self.set("MODEL", "model", value)
@@ -72,10 +78,11 @@ class Config:
 
     def get_data_source(self):
         source_type = self.config["DATA_SOURCE"]["source_type"]
-        if source_type == "csv":
-            return CSVDataSource(self.config["DATA_SOURCE"]["source_path"])
+        source_description = self.config["DATA_SOURCE"]["high_level_description"]
+        if source_type == "csvs":
+            return CSVDataSource(self.config["DATA_SOURCE"]["source_path"], source_description)
         elif source_type == "sqlite":
-            return SqliteDataSource(self.config["DATA_SOURCE"]["source_path"])
+            return SqliteDataSource(self.config["DATA_SOURCE"]["source_path"], source_description)
 
     def set_data_source(self, source_type, source_path):
         self.set("DATA_SOURCE", "source_type", source_type)
