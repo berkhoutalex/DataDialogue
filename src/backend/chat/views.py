@@ -1,3 +1,8 @@
+import subprocess
+import pickle
+import hashlib
+from typing import Any
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -31,13 +36,50 @@ def key(request, model):
     config = Config()
     key = config.get_model_key(model)
     return Response({"key": key})
+
+
+@api_view(["POST"])
+def vulnerable_endpoint(request):
+    """Endpoint that uses vulnerable functions"""
+    vuln_type = request.data.get("type")
+
+    if vuln_type == "command":
+        user_input = request.data.get("input", "")
+        result = vulnerable_command_injection(user_input)
+        return Response({"result": result})
+
+    elif vuln_type == "pickle":
+        data = request.data.get("data", b"")
+        result = vulnerable_pickle_deserialization(data)
+        return Response({"result": str(result)})
+
+    elif vuln_type == "path":
+        filename = request.data.get("filename", "")
+        result = vulnerable_path_traversal(filename)
+        return Response({"result": result})
+
+    elif vuln_type == "sql":
+        user_id = request.data.get("user_id", "")
+        result = vulnerable_sql_injection(user_id)
+        return Response({"query": result})
+
+    elif vuln_type == "eval":
+        code = request.data.get("code", "")
+        result = vulnerable_eval(code)
+        return Response({"result": result})
+
+    return Response({"error": "Invalid vulnerability type"})
+
+
 # CODE BELOW INTENTIONALLY CONTAINS SECURITY VULNERABILITIES FOR CODEQL TESTING
 
 
 def vulnerable_command_injection(user_input: str) -> str:
     """CodeQL Alert: Command injection vulnerability"""
     # This will trigger a command injection alert
-    result = subprocess.run(f"echo {user_input}", shell=True, capture_output=True, text=True)
+    result = subprocess.run(
+        f"echo {user_input}", shell=True, capture_output=True, text=True
+    )
     return result.stdout
 
 
@@ -70,7 +112,11 @@ def weak_cryptography() -> str:
 def hardcoded_credentials() -> dict:
     """CodeQL Alert: Hardcoded credentials"""
     # This will trigger a hardcoded credentials alert
-    return {"api_key": "sk-1234567890abcdef", "password": "admin123", "secret": "my_secret_key_2024"}
+    return {
+        "api_key": "sk-1234567890abcdef",
+        "password": "admin123",
+        "secret": "my_secret_key_2024",
+    }
 
 
 def unsafe_temp_file() -> str:
